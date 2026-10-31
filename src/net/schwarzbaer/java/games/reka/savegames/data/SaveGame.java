@@ -1,9 +1,14 @@
 package net.schwarzbaer.java.games.reka.savegames.data;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.w3c.dom.Document;
 
 public class SaveGame
 {
@@ -46,5 +51,42 @@ public class SaveGame
 	public File[] listFiles()
 	{
 		return folder.listFiles(file -> file!=null && file.isFile());
+	}
+
+	public DataFile[] getDataFiles()
+	{
+		File[] files = listFiles();
+		return Arrays
+				.stream(files)
+				.map(DataFile::new)
+				.toArray(DataFile[]::new);
+	}
+	
+	public static class DataFile
+	{
+		public final File file;
+		public final byte[] bytes;
+		public final Document document;
+
+		private DataFile(File file)
+		{
+			this.file = file;
+			bytes = readBytes(this.file);
+			document = XML.parse(bytes, "file \"%s\"".formatted(this.file.getAbsolutePath()));
+		}
+
+		private static byte[] readBytes(File file)
+		{
+			try
+			{
+				return Files.readAllBytes(file.toPath());
+			}
+			catch (IOException e)
+			{
+				System.err.printf("IOException while reading file \"%s\": %s%n", file.getAbsolutePath(), e.getMessage());
+				// e.printStackTrace();
+			}
+			return null;
+		}
 	}
 }
