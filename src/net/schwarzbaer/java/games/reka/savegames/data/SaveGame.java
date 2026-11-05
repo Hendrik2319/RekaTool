@@ -12,6 +12,8 @@ import java.util.Vector;
 
 import org.w3c.dom.Document;
 
+import net.schwarzbaer.java.lib.system.XMLHelper;
+
 public class SaveGame
 {
 	public final File folder;
@@ -87,7 +89,7 @@ public class SaveGame
 			String name = this.file.getName();
 			boolean suppressSAXException = name.equals("CurrentMap_c.xml") || name.equals("SaveLog.txt");
 			String source = "file \"%s\"".formatted(this.file.getAbsolutePath());
-			document = XML.parse(bytes, source, suppressSAXException);
+			document = XMLHelper.parse(bytes, source, suppressSAXException);
 		}
 
 		public boolean showTextViewImmediately()
