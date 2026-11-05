@@ -25,7 +25,6 @@ public class RekaSaveGameTool
 			catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 			
 			new RekaSaveGameTool().initialize();
-			
 		});
 	}
 

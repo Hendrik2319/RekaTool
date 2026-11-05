@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import org.w3c.dom.Document;
 
@@ -14,11 +16,13 @@ public class SaveGame
 {
 	public final File folder;
 	public final String name;
+	public final Vector<DataFile> dataFiles;
 
 	public SaveGame(File folder, String name)
 	{
 		this.folder = folder;
 		this.name = name;
+		dataFiles = new Vector<>(loadDataFiles());
 	}
 
 	public static void scan(List<SaveGame> saveGames)
@@ -48,18 +52,24 @@ public class SaveGame
 		}
 	}
 
-	public File[] listFiles()
+	private File[] listFiles()
 	{
 		return folder.listFiles(file -> file!=null && file.isFile());
 	}
 
-	public DataFile[] getDataFiles()
+	private List<DataFile> loadDataFiles()
 	{
-		File[] files = listFiles();
 		return Arrays
-				.stream(files)
+				.stream(listFiles())
+				.sorted(Comparator.comparing(File::getName))
 				.map(DataFile::new)
-				.toArray(DataFile[]::new);
+				.toList();
+	}
+
+	public void reloadDataFiles()
+	{
+		dataFiles.clear();
+		dataFiles.addAll(loadDataFiles());
 	}
 	
 	public static class DataFile
@@ -71,8 +81,19 @@ public class SaveGame
 		private DataFile(File file)
 		{
 			this.file = file;
+			
 			bytes = readBytes(this.file);
-			document = XML.parse(bytes, "file \"%s\"".formatted(this.file.getAbsolutePath()));
+			
+			String name = this.file.getName();
+			boolean suppressSAXException = name.equals("CurrentMap_c.xml") || name.equals("SaveLog.txt");
+			String source = "file \"%s\"".formatted(this.file.getAbsolutePath());
+			document = XML.parse(bytes, source, suppressSAXException);
+		}
+
+		public boolean showTextViewImmediately()
+		{
+			String name = this.file.getName();
+			return !name.equals("CurrentMap_c.xml");
 		}
 
 		private static byte[] readBytes(File file)

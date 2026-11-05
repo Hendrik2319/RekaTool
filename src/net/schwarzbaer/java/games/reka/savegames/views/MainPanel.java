@@ -2,8 +2,6 @@ package net.schwarzbaer.java.games.reka.savegames.views;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.swing.JPanel;
@@ -32,17 +30,13 @@ public class MainPanel extends JPanel
 		
 		for (SaveGame saveGame : saveGames)
 		{
-			DataFile[] dataFiles = saveGame.getDataFiles();
-			Arrays.sort(dataFiles, Comparator.comparing(df -> df.file.getName()));
-			
 			JTabbedPane fileList = new JTabbedPane();
-			for (DataFile file : dataFiles)
-			{
-				FilePanel filePanel = new FilePanel(file);
-				int index = fileList.getTabCount();
-				fileList.addTab(file.file.getName(), filePanel);
-				fileList.setTabComponentAt(index, filePanel.getTabHeaderComp());
-			}
+			
+			for (DataFile file : saveGame.dataFiles)
+				fileList.addTab(
+					file.file.getName(),
+					new FilePanel(file)
+				);
 			
 			saveGameList.addTab(saveGame.name, fileList);
 		}

@@ -6,24 +6,27 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 class XML
 {
-	static Document parse(byte[] bytes, String source)
+	static Document parse(byte[] bytes, String source, boolean suppressSAXException)
 	{
-		return parse(new InputSource(new ByteArrayInputStream(bytes)), source);
+		return parse(new InputSource(new ByteArrayInputStream(bytes)), source, suppressSAXException);
 	}
 
 	static Document parse(File file) {
 		try (FileInputStream input = new FileInputStream(file))
 		{
-			return parse(new InputSource(input), "file \"%s\"".formatted(file.getAbsolutePath()));
+			return parse(new InputSource(input), "file \"%s\"".formatted(file.getAbsolutePath()), false);
 		}
 		catch (FileNotFoundException e)
 		{
@@ -38,13 +41,31 @@ class XML
 		return null;
 	}
 
-	static Document parse(InputSource is, String source) {
+	static Document parse(InputSource is, String source, boolean suppressSAXException) {
 		if (is==null) return null;
 		try
 		{
-			return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+			DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder docBuilder = builderFactory.newDocumentBuilder();
+			docBuilder.setErrorHandler(new ErrorHandler() {
+				@Override public void warning   (SAXParseException exception) throws SAXException { throw exception; }
+				@Override public void error     (SAXParseException exception) throws SAXException { throw exception; }
+				@Override public void fatalError(SAXParseException exception) throws SAXException { throw exception; }
+			});
+			return docBuilder.parse(is);
 		}
-		catch (SAXException | IOException | ParserConfigurationException e)
+		catch (SAXException e)
+		{
+			if (!suppressSAXException)
+				System.err.printf("%s while parsing XML of %s: %s%n", e.getClass().getName(), source, e.getMessage());
+			//e.printStackTrace();
+		}
+		catch (IOException e)
+		{
+			System.err.printf("%s while parsing XML of %s: %s%n", e.getClass().getName(), source, e.getMessage());
+			//e.printStackTrace();
+		}
+		catch (ParserConfigurationException e)
 		{
 			System.err.printf("%s while parsing XML of %s: %s%n", e.getClass().getName(), source, e.getMessage());
 			//e.printStackTrace();
