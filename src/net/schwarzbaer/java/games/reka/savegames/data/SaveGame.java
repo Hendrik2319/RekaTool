@@ -29,6 +29,8 @@ public class SaveGame
 
 	public static void scan(List<SaveGame> saveGames)
 	{
+		XMLHelper.StructureScanner structureScanner = new XMLHelper.StructureScanner();
+		
 		Map<String,Integer> fileOcc = new HashMap<>();
 		if (saveGames!=null)
 		{
@@ -37,10 +39,12 @@ public class SaveGame
 			for (SaveGame saveGame : saveGames)
 			{
 				System.out.printf("%-30s -> \"%s\"%n", "\"%s\"".formatted(saveGame.name), saveGame.folder.getAbsolutePath());
-
-				File[] files = saveGame.listFiles();
-				for (File file : files)
-					fileOcc.compute(file.getName(), (name,n) -> n==null ? 1 : n+1);
+				for (DataFile file : saveGame.dataFiles)
+				{
+					fileOcc.compute(file.file.getName(), (name,n) -> n==null ? 1 : n+1);
+					if (file.document!=null)
+						structureScanner.scan(file.document, file.file.getName());
+				}
 			}
 		}
 		
@@ -52,6 +56,9 @@ public class SaveGame
 			for (String fileName : fileNames)
 				System.out.printf("%-20s : %d%n", fileName, fileOcc.get(fileName));
 		}
+		
+		System.out.println();
+		structureScanner.print(System.err);
 	}
 
 	private File[] listFiles()
