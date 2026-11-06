@@ -32,7 +32,7 @@ public class MainPanel extends JPanel
 		{
 			JTabbedPane fileList = new JTabbedPane();
 			
-			for (DataFile file : saveGame.dataFiles)
+			for (DataFile file : saveGame)
 				fileList.addTab(
 					file.file.getName(),
 					new FilePanel(file)

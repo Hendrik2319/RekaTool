@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -14,23 +15,36 @@ import org.w3c.dom.Document;
 
 import net.schwarzbaer.java.lib.system.XMLHelper;
 
-public class SaveGame
+public class SaveGame implements Iterable<SaveGame.DataFile>
 {
-	public final File folder;
-	public final String name;
-	public final Vector<DataFile> dataFiles;
+	public static final XMLHelper.StructureScanner structureScanner = new XMLHelper.StructureScanner();
+	
+	public  final File folder;
+	public  final String name;
+	private final List<DataFile> dataFiles;
+	@SuppressWarnings("unused")
+	private Base64Image fogMap;
+	@SuppressWarnings("unused")
+	private Base64Image thumbnail;
 
 	public SaveGame(File folder, String name)
 	{
 		this.folder = folder;
 		this.name = name;
-		dataFiles = new Vector<>(loadDataFiles());
+		fogMap    = null;
+		thumbnail = null;
+		dataFiles = new Vector<>();
+		reloadDataFiles();
+	}
+
+	@Override
+	public Iterator<DataFile> iterator()
+	{
+		return dataFiles.iterator();
 	}
 
 	public static void scan(List<SaveGame> saveGames)
 	{
-		XMLHelper.StructureScanner structureScanner = new XMLHelper.StructureScanner();
-		
 		Map<String,Integer> fileOcc = new HashMap<>();
 		if (saveGames!=null)
 		{
@@ -39,11 +53,11 @@ public class SaveGame
 			for (SaveGame saveGame : saveGames)
 			{
 				System.out.printf("%-30s -> \"%s\"%n", "\"%s\"".formatted(saveGame.name), saveGame.folder.getAbsolutePath());
-				for (DataFile file : saveGame.dataFiles)
+				for (DataFile file : saveGame)
 				{
 					fileOcc.compute(file.file.getName(), (name,n) -> n==null ? 1 : n+1);
-					if (file.document!=null)
-						structureScanner.scan(file.document, file.file.getName());
+					if (file.document!=null && file.getClass().equals(DataFile.class))
+						structureScanner.scan(file.document, "File[%s]".formatted(file.file.getName()));
 				}
 			}
 		}
@@ -56,52 +70,69 @@ public class SaveGame
 			for (String fileName : fileNames)
 				System.out.printf("%-20s : %d%n", fileName, fileOcc.get(fileName));
 		}
-		
-		System.out.println();
-		structureScanner.print(System.err);
-	}
-
-	private File[] listFiles()
-	{
-		return folder.listFiles(file -> file!=null && file.isFile());
-	}
-
-	private List<DataFile> loadDataFiles()
-	{
-		return Arrays
-				.stream(listFiles())
-				.sorted(Comparator.comparing(File::getName))
-				.map(DataFile::new)
-				.toList();
 	}
 
 	public void reloadDataFiles()
 	{
 		dataFiles.clear();
-		dataFiles.addAll(loadDataFiles());
+		fogMap    = null;
+		thumbnail = null;
+		
+		File[] files = folder.listFiles(file -> file!=null && file.isFile());
+		Arrays.sort(files, Comparator.comparing(File::getName));
+		
+		for (File file : files)
+		{
+			DataFile dataFile;
+			switch (file.getName())
+			{
+			/*
+				Character.xml        : 12
+				Collection.xml       : 12
+				CurrentMap_c.xml     : 12
+				FogMap.xml           : 12
+				Guidance.xml         : 12
+				House.xml            : 12
+				Inventory.xml        : 12
+				Meta.xml             : 12
+				PoiHistory.xml       : 10
+				Progress.xml         : 12
+				SaveLog.txt          : 12
+				Stats.xml            : 12
+				Thumbnail.xml        : 12
+			 */
+			case "FogMap.xml"   : dataFile = fogMap    = new Base64Image(file); break;
+			case "Thumbnail.xml": dataFile = thumbnail = new Base64Image(file); break;
+			
+			default:
+				dataFile = new DataFile(file);
+				break;
+			}
+			dataFiles.add(dataFile);
+		}
 	}
 	
 	public static class DataFile
 	{
+		public final String name;
 		public final File file;
 		public final byte[] bytes;
 		public final Document document;
 
-		private DataFile(File file)
+		protected DataFile(File file)
 		{
 			this.file = file;
+			name = this.file.getName();
 			
 			bytes = readBytes(this.file);
 			
-			String name = this.file.getName();
 			boolean suppressSAXException = name.equals("CurrentMap_c.xml") || name.equals("SaveLog.txt");
 			String source = "file \"%s\"".formatted(this.file.getAbsolutePath());
-			document = XMLHelper.parse(bytes, source, suppressSAXException);
+			document = bytes==null ? null : XMLHelper.parse(bytes, source, suppressSAXException);
 		}
 
 		public boolean showTextViewImmediately()
 		{
-			String name = this.file.getName();
 			return !name.equals("CurrentMap_c.xml");
 		}
 

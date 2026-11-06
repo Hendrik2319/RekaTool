@@ -39,8 +39,17 @@ public class RekaSaveGameTool
 
 	private void initialize()
 	{
+		SaveGame.structureScanner.clear();
+		
 		List<SaveGame> saveGames = getSaveGames(mainWindow);
 		SaveGame.scan(saveGames);
+		
+		if (SaveGame.structureScanner.hasData())
+		{
+			System.out.println();
+			SaveGame.structureScanner.print(System.err);
+		}
+		
 		contentPane.set(saveGames);
 	}
 
