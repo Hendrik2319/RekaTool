@@ -17,7 +17,7 @@ import net.schwarzbaer.java.lib.system.XMLHelper.KnownValues;
 public class Base64Image extends SaveGame.DataFile
 {
 	private static KnownValues KV = SaveGame.KVF
-			.createFor(Base64Image.class)
+			.createFor(Base64Image.class, " <DOC>")
 			.addNodes( KnownValues.NodeContainerType.Nodes, "Image" );
 	
 	private static KnownValues KV_Image = SaveGame.KVF

@@ -87,6 +87,9 @@ public class RekaSaveGameTool
 			else
 				playerFolder = playerFolders.get(0);
 			
+			if (!SaveGame.KV_SCAN_EACH_RELOAD)
+				SaveGame.KVF.clearStatementList();
+			
 			List<SaveGame> saveGames = new Vector<>();
 			if (playerFolder!=null)
 				playerFolder.forEachFolder(
@@ -102,6 +105,9 @@ public class RekaSaveGameTool
 								)
 						)
 				);
+			
+			if (!SaveGame.KV_SCAN_EACH_RELOAD)
+				SaveGame.KVF.showStatementList(System.err, "Unexpected Values in XML of a SaveGame");
 			
 			return saveGames;
 		}

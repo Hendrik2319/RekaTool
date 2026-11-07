@@ -18,11 +18,14 @@ import net.schwarzbaer.java.lib.system.XMLHelper;
 public class SaveGame implements Iterable<SaveGame.DataFile>
 {
 	public static final XMLHelper.StructureScanner structureScanner = new XMLHelper.StructureScanner();
-	static final XMLHelper.KnownValues.Factory KVF = new XMLHelper.KnownValues.Factory("net.schwarzbaer.java.games.reka.savegames.data.");
+	public static final XMLHelper.KnownValues.Factory KVF = new XMLHelper.KnownValues.Factory("net.schwarzbaer.java.games.reka.savegames.data.");
+	public static final boolean KV_SCAN_EACH_RELOAD = false;
 	
 	public  final File folder;
 	public  final String name;
 	private final List<DataFile> dataFiles;
+	@SuppressWarnings("unused")
+	private Character character;
 	@SuppressWarnings("unused")
 	private Base64Image fogMap;
 	@SuppressWarnings("unused")
@@ -32,6 +35,7 @@ public class SaveGame implements Iterable<SaveGame.DataFile>
 	{
 		this.folder = folder;
 		this.name = name;
+		character = null;
 		fogMap    = null;
 		thumbnail = null;
 		dataFiles = new Vector<>();
@@ -78,7 +82,8 @@ public class SaveGame implements Iterable<SaveGame.DataFile>
 		dataFiles.clear();
 		fogMap    = null;
 		thumbnail = null;
-		KVF.clearStatementList();
+		if (KV_SCAN_EACH_RELOAD)
+			KVF.clearStatementList();
 		
 		File[] files = folder.listFiles(file -> file!=null && file.isFile());
 		Arrays.sort(files, Comparator.comparing(File::getName));
@@ -103,6 +108,7 @@ public class SaveGame implements Iterable<SaveGame.DataFile>
 				Stats.xml            : 12
 				Thumbnail.xml        : 12
 			 */
+			case "Character.xml": dataFile = character = new Character  (file); break;
 			case "FogMap.xml"   : dataFile = fogMap    = new Base64Image(file); break;
 			case "Thumbnail.xml": dataFile = thumbnail = new Base64Image(file); break;
 			
@@ -113,7 +119,8 @@ public class SaveGame implements Iterable<SaveGame.DataFile>
 			dataFiles.add(dataFile);
 		}
 		
-		KVF.showStatementList(System.err, "Unexpected Values in XML of SaveGame \"%s\"".formatted(folder.getAbsolutePath()));
+		if (KV_SCAN_EACH_RELOAD)
+			KVF.showStatementList(System.err, "Unexpected Values in XML of SaveGame \"%s\"".formatted(folder.getAbsolutePath()));
 	}
 	
 	public static class DataFile
