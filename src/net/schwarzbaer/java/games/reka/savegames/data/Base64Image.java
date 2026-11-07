@@ -12,18 +12,26 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import net.schwarzbaer.java.lib.system.XMLHelper;
+import net.schwarzbaer.java.lib.system.XMLHelper.KnownValues;
 
 public class Base64Image extends SaveGame.DataFile
 {
-	public final String rawBase64Str;
-	public final byte[] decodedBytes;
-	public final BufferedImage image;
-
+	private static KnownValues KV = SaveGame.KVF
+			.createFor(Base64Image.class)
+			.addNodes( KnownValues.NodeContainerType.Nodes, "Image" );
+	
+	private static KnownValues KV_Image = SaveGame.KVF
+			.createFor(Base64Image.class, " <Image>")
+			.addNodes( KnownValues.NodeContainerType.Text, "Data" );
 	/*
 		   Base64Image <DOC>  --->  nodes: [1]Image
 		   Base64Image <DOC> <Image>  --->  nodes: [1]Data
 		   Base64Image <DOC> <Image> <Data>  --->  has text
 	 */
+	
+	public final String rawBase64Str;
+	public final byte[] decodedBytes;
+	public final BufferedImage image;
 	protected Base64Image(File file)
 	{
 		super(file);
@@ -38,9 +46,13 @@ public class Base64Image extends SaveGame.DataFile
 		if (document == null)
 			return null;
 		
+		KV.scan(document);
+		
 		Node imageNode = XMLHelper.getChild(document, "Image");
 		if (imageNode == null)
 			return null;
+		
+		KV_Image.scan(imageNode);
 		
 		Node dataNode = XMLHelper.getChild(imageNode, "Data");
 		if (dataNode == null)

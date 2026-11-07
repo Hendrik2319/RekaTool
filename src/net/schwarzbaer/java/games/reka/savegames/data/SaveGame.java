@@ -18,6 +18,7 @@ import net.schwarzbaer.java.lib.system.XMLHelper;
 public class SaveGame implements Iterable<SaveGame.DataFile>
 {
 	public static final XMLHelper.StructureScanner structureScanner = new XMLHelper.StructureScanner();
+	static final XMLHelper.KnownValues.Factory KVF = new XMLHelper.KnownValues.Factory("net.schwarzbaer.java.games.reka.savegames.data.");
 	
 	public  final File folder;
 	public  final String name;
@@ -77,6 +78,7 @@ public class SaveGame implements Iterable<SaveGame.DataFile>
 		dataFiles.clear();
 		fogMap    = null;
 		thumbnail = null;
+		KVF.clearStatementList();
 		
 		File[] files = folder.listFiles(file -> file!=null && file.isFile());
 		Arrays.sort(files, Comparator.comparing(File::getName));
@@ -110,6 +112,8 @@ public class SaveGame implements Iterable<SaveGame.DataFile>
 			}
 			dataFiles.add(dataFile);
 		}
+		
+		KVF.showStatementList(System.err, "Unexpected Values in XML of SaveGame \"%s\"".formatted(folder.getAbsolutePath()));
 	}
 	
 	public static class DataFile
