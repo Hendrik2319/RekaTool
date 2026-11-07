@@ -3,6 +3,7 @@ package net.schwarzbaer.java.games.reka.savegames.views;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
@@ -25,6 +26,7 @@ public class FilePanel extends JTabbedPane
 	
 	public interface SimpleValueOutputter
 	{
+		boolean canShowInstantly();
 		void writeTo(ValueListOutput out);
 
 		public static void writeTo(ValueListOutput out, int indentLevel, String label, String[] strs)
@@ -63,11 +65,15 @@ public class FilePanel extends JTabbedPane
 			new TypeTabs<>(
 					SimpleValueOutputter.class,
 					(tc, outputter) -> {
-						tc.addTab("Values", Tools.addOptionalPanel("Text View", () -> {
+						Supplier<JComponent> createPanel = () -> {
 							ValueListOutput out = new ValueListOutput();
 							outputter.writeTo(out);
 							return createTextViewPanel(out.generateOutput(), false);
-						}));
+						};
+						if (outputter.canShowInstantly())
+							tc.addTab("Values", createPanel.get());
+						else
+							tc.addTab("Values", Tools.addOptionalPanel("Text View", createPanel));
 					}
 			),
 			new TypeTabs<>(

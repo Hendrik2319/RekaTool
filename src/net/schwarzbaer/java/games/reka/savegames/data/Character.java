@@ -81,6 +81,9 @@ public class Character extends DataFile implements FilePanel.SimpleValueOutputte
 	}
 	
 	@Override
+	public boolean canShowInstantly() { return true; }
+
+	@Override
 	public void writeTo(ValueListOutput out)
 	{
 		out.add(0, "Character");
