@@ -17,10 +17,30 @@ import net.schwarzbaer.java.games.reka.savegames.data.SaveGame.DataFile;
 import net.schwarzbaer.java.lib.gui.HexViewPanel;
 import net.schwarzbaer.java.lib.gui.ImageView;
 import net.schwarzbaer.java.lib.gui.NewXMLTreeView;
+import net.schwarzbaer.java.lib.gui.ValueListOutput;
 
-class FilePanel extends JTabbedPane
+public class FilePanel extends JTabbedPane
 {
 	private static final long serialVersionUID = 529171409091722488L;
+	
+	public interface SimpleValueOutputter
+	{
+		void writeTo(ValueListOutput out);
+
+		public static void writeTo(ValueListOutput out, int indentLevel, String label, String[] strs)
+		{
+			if (strs==null)
+				out.add(indentLevel, label, "%s", "NULL");
+			
+			else
+			{
+				out.add(indentLevel, label, strs.length);
+				for (int i=0; i<strs.length; i++)
+					out.add(indentLevel+1, "[%d]".formatted(i+1), strs[i]);
+			}
+			
+		}
+	}
 	
 	private static TypeTabs<?>[] TYPE_TABS = {
 			new TypeTabs<>(
@@ -38,6 +58,16 @@ class FilePanel extends JTabbedPane
 						
 						if (file.document!=null)
 							tc.addTab("XML", createXMLTreeViewPanel(file.document));
+					}
+			),
+			new TypeTabs<>(
+					SimpleValueOutputter.class,
+					(tc, outputter) -> {
+						tc.addTab("Values", Tools.addOptionalPanel("Text View", () -> {
+							ValueListOutput out = new ValueListOutput();
+							outputter.writeTo(out);
+							return createTextViewPanel(out.generateOutput(), false);
+						}));
 					}
 			),
 			new TypeTabs<>(

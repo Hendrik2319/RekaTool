@@ -5,12 +5,13 @@ import java.io.File;
 import org.w3c.dom.Node;
 
 import net.schwarzbaer.java.games.reka.savegames.data.SaveGame.DataFile;
+import net.schwarzbaer.java.games.reka.savegames.views.FilePanel;
+import net.schwarzbaer.java.lib.gui.ValueListOutput;
 import net.schwarzbaer.java.lib.system.XMLHelper;
 import net.schwarzbaer.java.lib.system.XMLHelper.KnownValues;
 import net.schwarzbaer.java.lib.system.XMLHelper.KnownValues.NodeContainerType;
 
-@SuppressWarnings("unused")
-public class Character extends DataFile
+public class Character extends DataFile implements FilePanel.SimpleValueOutputter
 {
 	private static final KnownValues KV_Document = SaveGame.KVF
 			.createFor(Character.class, " <DOC>")
@@ -79,6 +80,26 @@ public class Character extends DataFile
 		wearableTextures  = XMLTools.parseListOfStrings(wearableTexturesNode , Character.class, "wearableTextures" );
 	}
 	
+	@Override
+	public void writeTo(ValueListOutput out)
+	{
+		out.add(0, "Character");
+		out.add(1, "saveGameVersionID", saveGameVersionID);
+		out.add(1, "maskIndex"        , maskIndex);
+		out.add(1, "wearingMask"      , wearingMask, "Yes", "No");
+		if (materialFloatSettingDefinitions==null)
+			out.add(1, "Material Definitions", "%s", "NULL");
+		else
+		{
+			out.add(1, "Material Definitions", "%d", materialFloatSettingDefinitions.length);
+			for (int i=0; i<materialFloatSettingDefinitions.length; i++)
+				MaterialDef.writeTo(out, 2, i, materialFloatSettingDefinitions[i]);
+		}
+		FilePanel.SimpleValueOutputter.writeTo(out, 1, "Wearable Materials", wearableMaterials);
+		FilePanel.SimpleValueOutputter.writeTo(out, 1, "Wearable Meshes"   , wearableMeshes   );
+		FilePanel.SimpleValueOutputter.writeTo(out, 1, "Wearable Textures" , wearableTextures );
+	}
+	
 	private static class MaterialDef
 	{
 		private static final KnownValues KV = SaveGame.KVF
@@ -104,6 +125,21 @@ public class Character extends DataFile
 					MaterialDef.class, "pfloats"
 			);
 		}
+		
+		static void writeTo(ValueListOutput out, int indentLevel, int arrIndex, MaterialDef materialDef)
+		{
+			if (materialDef==null)
+				out.add(indentLevel, "[%d] NULL".formatted(arrIndex+1));
+			else
+			{
+				out.add(indentLevel, "[%d]".formatted(arrIndex+1), materialDef.name);
+				if (materialDef.parameters==null)
+					out.add(indentLevel+1, "parameters == NULL");
+				else
+					for (int i=0; i<materialDef.parameters.length; i++)
+						ParameterFloat.writeTo(out, indentLevel+1, i, materialDef.parameters[i]);
+			}
+		}
 	}
 	
 	private static class ParameterFloat
@@ -124,6 +160,18 @@ public class Character extends DataFile
 			name     = XMLTools.getTextFromSubNode(base, "parameterName", KV);
 			valueStr = XMLTools.getTextFromSubNode(base, "value"        , KV);
 			value    = XMLTools.parseFloat(valueStr, XMLTools.forSubNode(KV, "value"));
+		}
+		
+		static void writeTo(ValueListOutput out, int indentLevel, int arrIndex, ParameterFloat parameter)
+		{
+			if (parameter==null)
+				out.add(indentLevel, "[%d] NULL".formatted(arrIndex+1));
+			else
+			{
+				String nameStr = parameter.name==null ? "{name==NULL}" : "\"%s\"".formatted(parameter.name);
+				out.add(indentLevel, "[%d] %s".formatted(arrIndex+1, nameStr), parameter.value);
+			}
+			
 		}
 	}
 }
